@@ -1,6 +1,7 @@
+import time
 import unittest
 
-from card import Card, Deck, Hand
+from card import Card, Deck, Hand, PokerSession
 
 
 class TestCard(unittest.TestCase):
@@ -69,12 +70,12 @@ class TestHand(unittest.TestCase):
 
         # get a Hand
         self.hand = Hand(self.deck)
-    
+
     def score_hand(self, score_string):
         """Test helper for scoring hands."""
         self.hand.cards = self.score_deck.cards
         score_dict = self.hand.score(self.score_deck)
-        
+
         # test if score_strings are equivalent
         self.assertEqual(score_dict["score_string"], score_string)
         # make sure the copied hand has 5 cards
@@ -194,6 +195,64 @@ class TestHand(unittest.TestCase):
     def test_high_card(self):
         self.score_deck.cards = [Card(11, 1), Card(12, 2), Card(5, 3), Card(7, 0), Card(10,0)]
         self.score_hand(f"High Card:Q\u2666")
+
+
+class PokerSessionTest(unittest.TestCase):
+    def setUp(self):
+        self.session = PokerSession()
+        self.game_session = self.session.new_session()
+
+    def test_pokersession_constructed(self):
+        self.assertIsInstance(self.session, PokerSession)
+
+    def test_get_session(self):
+        session_id = self.session.new_session()
+        self.assertIsNotNone(session_id)
+
+    def test_sessions_have_different_ids(self):
+        session_1 = self.session.new_session()
+        session_2 = self.session.new_session()
+
+        self.assertNotEqual(session_1, session_2)
+
+    def test_sessions_stored(self):
+        session_id = self.session.new_session()
+        session_dict = self.session.sessions[session_id]
+
+        self.assertIn(session_id, self.session.sessions)
+
+    def test_assert_data_in_session(self):
+        session_id = self.session.new_session()
+
+        session_dict = self.session.sessions[session_id]
+
+        print(session_dict)
+
+        # test for data
+        self.assertIsNotNone(session_dict['timestamp'])
+        self.assertIsInstance(session_dict['deck'], Deck)
+        self.assertIsNone(session_dict['hand'], Hand)
+
+    def test_get_hand(self):
+        hand = self.session.get_hand(self.game_session)
+
+        self.assertIsInstance(hand, Hand)
+        self.assertEqual(hand, self.session.sessions[self.game_session]['hand'])
+
+    def test_get_score_discard_none(self):
+        hand = self.session.get_hand(self.game_session)
+        score_dict = self.session.get_score(self.game_session, [])
+
+        self.assertTrue(len(score_dict['score_string']) > 0)
+        self.assertTrue(len(score_dict['cards']) == 5)
+
+    def test_get_score_discard_2(self):
+        hand = self.session.get_hand(self.game_session)
+        score_dict = self.session.get_score(self.game_session, [1, 2])
+
+        self.assertTrue(len(score_dict['score_string']) > 0)
+        self.assertTrue(len(score_dict['cards']) == 5)
+
 
 if __name__ == '__main__':
     unittest.main()

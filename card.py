@@ -1,3 +1,5 @@
+import time
+import os
 from random import shuffle
 
 
@@ -201,6 +203,50 @@ class Hand:
         return v
 
 
+class PokerSession:
+    def __init__(self):
+        self.sessions = {}
+
+    def new_session(self):
+        session_dict = {}
+
+        session_id = os.urandom(16)
+        session_dict['timestamp'] = time.time()
+        session_dict['deck'] = Deck()
+        session_dict['hand'] = None
+
+        # set the session
+        self.sessions[session_id] = str(session_id)
+        self.sessions[session_id] = session_dict
+
+        return session_id
+
+    def get_hand(self, session_id):
+        session_dict = self.sessions[session_id]
+        # create hand
+        hand = Hand(session_dict['deck'])
+
+        # store it in session
+        session_dict['hand'] = hand
+
+        return hand
+
+    def get_score(self, session_id, discard_list):
+        session_dict = self.sessions[session_id]
+        hand = session_dict['hand']
+        deck = session_dict['deck']
+        # discard cards
+        hand.discard(discard_list, deck)
+
+        # score the hand
+        score_dict = hand.score(deck)
+
+        # set session hand to none
+        session_dict['hand'] = None
+
+        return score_dict
+
+
 if __name__ == '__main__':
     deck = Deck()
 
@@ -231,14 +277,14 @@ if __name__ == '__main__':
                 print("INPUT: Card must be an number between 1 and 5")
         hand.discard(out_cards, deck)
         score_dict = hand.score(deck)
-        
+
         # print hand
-        
+
         for card in score_dict["cards"]:
             print('|', end='')
             print(card, end='')
         print('|')
-        
+
         # print score string
         print(score_dict["score_string"])
 
